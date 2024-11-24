@@ -1,5 +1,5 @@
 ### model
-model_name_or_path: saves/llama3-8b/full/sft
+model_name_or_path: /mnt/default/finetuned-model/llama3.1-8b-full-sft-glanchatv2-lr_scheduler_warmup_stable_decay-lr9e-7-bs2-grad_step16/checkpoint-2000
 
 ### method
 stage: sft
@@ -7,17 +7,23 @@ do_predict: true
 finetuning_type: full
 
 ### dataset
-eval_dataset: identity,alpaca_en_demo
+eval_dataset: glanchatv2-question
 template: llama3
-cutoff_len: 1024
-max_samples: 50
+cutoff_len: 4096 # 1024
 overwrite_cache: true
 preprocessing_num_workers: 16
 
 ### output
-output_dir: saves/llama3-8b/full/predict
+output_dir: /mnt/default/results/inference/llama3.1-8b-full-sft-glanchatv2-round1
 overwrite_output_dir: true
+report_to: wandb
 
 ### eval
-per_device_eval_batch_size: 1
-predict_with_generate: true
+per_device_eval_batch_size: 4
+predict_with_generate: true # Whether to use generate to calculate generative metrics (ROUGE, BLEU)
+num_beams: 8 # default: 1
+do_sample: ture # default: true
+top_k: 50 # default: 50
+top_p: 0.7 # default: 0.7
+temperature: 0.95 # default: 0.95
+max_new_tokens: 1024 # default: 1024

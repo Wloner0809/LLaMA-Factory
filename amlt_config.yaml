@@ -1,0 +1,182 @@
+description: run llama-factory
+
+target:
+  service: sing
+  name: msrresrchvc # 可以通过amlt target list sing查看 msroctovc msrresrchvc
+  workspace_name: Workspace_NLC # NLC_Workspace
+
+environment:
+  image: amlt-sing/acpt-torch2.4.1-py3.10-cuda12.4-ubuntu22.04 # amlt-sing/acpt-rocm6.1_ubuntu20.04_py3.9_pytorch2.1.2 amlt-sing/acpt-2.4.0-py3.10-cuda12.4 (可以通过amlt cache base-images查看)
+  setup:
+    - mkdir -p ~/.cache/huggingface && echo -n "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" > ~/.cache/huggingface/token
+    - pip uninstall -y onnxruntime_training # https://github.com/microsoft/DeepSpeed/issues/5421#issuecomment-2059584263
+    - pip install -e ".[torch,metrics]"
+    - pip install wandb
+    - echo "setup done"
+
+storage:
+    output:
+      storage_account_name: conversationhub
+      container_name: yuwang
+    input:
+      storage_account_name: conversationhub
+      container_name: yuwang
+
+code:
+  local_dir: $CONFIG_DIR/ # $CONFIG_DIR表示yaml文件所在路径, 也可以直接绝对路径
+
+# data:
+#   local_dir: $CONFIG_DIR/ # 开发机上数据集的路径
+#   remote_dir: /mnt/input/ # 运行环境中数据集的路径, 相对blob container的路径
+
+jobs:
+# - name: llama-factory-sft-full-glanchatv2-ckpt4000-inference_round1
+#   command:
+#     - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+#     - export NCCL_SOCKET_IFNAME="^docker0,lo"
+#     - export NCCL_DEBUG=INFO
+#     - export NCCL_P2P_LEVEL=NVL
+#     - echo "start inferencing"
+#     - CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch src/inference.py
+#   sku: 1x80G2-A100 # 4x40G8-A100-IB-NvLink # 声明GPU/CPU
+#   process_count_per_node: 1 # 每个node上的进程, default: 0
+#   mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+#   sla_tier: premium # Default: premium
+#   priority: high
+#   execution_mode: basic # Default: basic
+#   submit_args:
+#     env:
+#       { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }
+# - name: llama-factory-dpo-full-autoif_dpo_pairs-AutoIF_instruct_61k_ckpt1000
+#   command:
+#     - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+#     - export NCCL_SOCKET_IFNAME="^docker0,lo"
+#     - export NCCL_DEBUG=INFO
+#     - export NCCL_P2P_LEVEL=NVL
+#     - export WANDB_PROJECT="Post-Train"
+#     - export WANDB_ENTITY="MSRA-YuWang"
+#     - echo "start training"
+#     - bash scripts/llama-factory-full.sh
+#   sku: 1x80G4-H100 # 4x40G8-A100-IB-NvLink # 声明GPU/CPU
+#   process_count_per_node: 1 # 每个node上的进程, default: 0
+#   mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+#   sla_tier: premium # Default: premium
+#   priority: high
+#   execution_mode: basic # Default: basic
+#   submit_args:
+#     env:
+#       { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }
+# - name: llama-factory-sft-full-autoif_sft_data_full
+#   command:
+#     - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+#     - export NCCL_SOCKET_IFNAME="^docker0,lo"
+#     - export NCCL_DEBUG=INFO
+#     - export NCCL_P2P_LEVEL=NVL
+#     - export WANDB_PROJECT="Post-Train"
+#     - export WANDB_ENTITY="MSRA-YuWang"
+#     - echo "start training"
+#     - bash scripts/llama-factory-full.sh
+#   sku: 1x80G4-A100 # 4x40G8-A100-IB-NvLink # 1x80G8-H100
+#   process_count_per_node: 1 # 每个node上的进程, default: 0
+#   mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+#   sla_tier: premium # Default: premium
+#   priority: high
+#   execution_mode: basic # Default: basic
+#   submit_args:
+#     env:
+#       { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }
+# - name: llama-factory-sft-full-evol_instruct
+#   command:
+#     - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+#     - export WANDB_API_KEY="211edf92584710e4ccb6e0bf073a549c7404a723"
+#     - export WANDB_PROJECT="Post-Train"
+#     - export WANDB_ENTITY="MSRA-YuWang"
+#     - export NCCL_SOCKET_IFNAME="^docker0,lo"
+#     - export NCCL_DEBUG=INFO
+#     - export NCCL_P2P_LEVEL=NVL
+#     - echo "start training"
+#     - bash scripts/llama-factory-full.sh
+#   sku: 1x40G8-A100 # 声明GPU/CPU 1x80G1-A100
+#   process_count_per_node: 1 # 每个node上的进程, default: 0
+#   mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+#   sla_tier: premium # Default: premium
+#   priority: high
+#   execution_mode: basic # Default: basic
+#   submit_args:
+#     env:
+#       { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }
+# - name: llama-factory-sft-full-lima-lr1e-6
+#   command:
+#     - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+#     - export WANDB_API_KEY="211edf92584710e4ccb6e0bf073a549c7404a723"
+#     - export WANDB_PROJECT="Post-Train"
+#     - export WANDB_ENTITY="MSRA-YuWang"
+#     - export NCCL_SOCKET_IFNAME="^docker0,lo"
+#     - export NCCL_DEBUG=INFO
+#     - export NCCL_P2P_LEVEL=NVL
+#     - echo "start training"
+#     - bash scripts/llama-factory-full.sh
+#   sku: 1x80G4-A100 # 声明GPU/CPU
+#   process_count_per_node: 1 # 每个node上的进程, default: 0
+#   mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+#   sla_tier: premium # Default: premium
+#   priority: high
+#   execution_mode: basic # Default: basic
+#   submit_args:
+#     env:
+#       { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }
+- name: llama-factory-sft-full-Infinity_Instruct
+  command:
+    - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+    - export NCCL_SOCKET_IFNAME="^docker0,lo"
+    - export NCCL_DEBUG=INFO
+    - export NCCL_P2P_LEVEL=NVL
+    - export WANDB_PROJECT="Post-Train"
+    - export WANDB_ENTITY="MSRA-YuWang"
+    - echo "start training"
+    - bash scripts/llama-factory-full.sh
+  sku: 1x80G8-H100 # 声明GPU/CPU
+  process_count_per_node: 1 # 每个node上的进程, default: 0
+  mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+  sla_tier: premium # Default: premium
+  priority: high
+  execution_mode: basic # Default: basic
+  submit_args:
+    env:
+      { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }
+# - name: llama-factory-dpo-full-tulu-sft_Infinity_Instruct_ckpt25900-beta_0.3-batchsize_1
+#   command:
+#     - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+#     - export NCCL_SOCKET_IFNAME="^docker0,lo"
+#     - export NCCL_DEBUG=INFO
+#     - export NCCL_P2P_LEVEL=NVL
+#     - export WANDB_PROJECT="Post-Train"
+#     - export WANDB_ENTITY="MSRA-YuWang"
+#     - echo "start training"
+#     - bash scripts/llama-factory-full.sh
+#   sku: 1x80G4-A100 # 声明GPU/CPU
+#   process_count_per_node: 1 # 每个node上的进程, default: 0
+#   mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+#   sla_tier: premium # Default: premium
+#   priority: high
+#   execution_mode: basic # Default: basic
+#   submit_args:
+#     env:
+#       { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }
+# - name: llama-factory-sft-lora-lima
+#   command:
+#     - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+#     # - export OUTPUT_DIR=$$AMLT_OUTPUT_DIR/
+#     # - export DATA_DIR=/mnt/input/data/
+#     # - ls -lh $$DATA_DIR/
+#     - echo "start training"
+#     - llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml
+#   sku: 80G1-A100 # 声明GPU/CPU
+#   process_count_per_node: 1 # 每个node上的进程, default: 0
+#   mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+#   sla_tier: premium # Default: premium
+#   priority: high
+#   execution_mode: basic # Default: basic
+#   submit_args:
+#     env:
+#       { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }

@@ -1,0 +1,47 @@
+description: run llama-factory
+
+target:
+  service: sing
+  name: msroctovc # 可以通过amlt target list sing查看 msroctovc msrresrchvc
+  workspace_name: NLC_Workspace
+
+environment:
+  image: amlt-sing/acpt-rocm6.1_ubuntu20.04_py3.9_pytorch2.1.2 # (可以通过amlt cache base-images查看)
+  setup:
+    - mkdir -p ~/.cache/huggingface && echo -n "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" > ~/.cache/huggingface/token
+    - export PATH=$$PATH:/home/aiscuser/.local/bin
+    - pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1 --user
+    - pip install -e ".[torch,metrics]" --user
+    - echo "setup done"
+
+storage:
+    output:
+      storage_account_name: conversationhub
+      container_name: yuwang
+    input:
+      storage_account_name: conversationhub
+      container_name: yuwang
+
+code:
+  local_dir: $CONFIG_DIR/ # $CONFIG_DIR表示yaml文件所在路径, 也可以直接绝对路径
+
+# data:
+#   local_dir: $CONFIG_DIR/ # 开发机上数据集的路径
+#   remote_dir: /mnt/input/ # 运行环境中数据集的路径, 相对blob container的路径
+
+jobs:
+- name: llama-factory-dpo-full-Infinity_Preference-sft_Infinity_Instruct_ckpt25900-amd
+  command:
+    - export TOKENIZERS_PARALLELISM=false # 禁用并行化分词器, 避免多线程出问题
+    - export NCCL_TOPO_FILE=
+    - echo "start training"
+    - bash scripts/llama-factory-full-amd.sh
+  sku: 1x192G4-MI300X # 声明GPU/CPU
+  process_count_per_node: 1 # 每个node上的进程, default: 0
+  mpi: False # 开启OpenMPI, 如果是False则仍可以用NCCL backend
+  sla_tier: premium # Default: premium
+  priority: high
+  execution_mode: basic # Default: basic
+  submit_args:
+    env:
+      { AMLT_DOCKERFILE_TEMPLATE: DEFAULT }

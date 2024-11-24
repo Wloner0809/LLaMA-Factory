@@ -1,5 +1,5 @@
 ### model
-model_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
+model_name_or_path: /mnt/default/model/llama3.1-8b
 
 ### method
 stage: sft
@@ -8,32 +8,36 @@ finetuning_type: full
 deepspeed: examples/deepspeed/ds_z3_config.json
 
 ### dataset
-dataset: identity,alpaca_en_demo
+dataset: Infinity_Instruct # Infinity-Instruct-python # evol-codealpaca-v1 # glanchatv2 # Magicoder-OSS-Instruct-python # Infinity_Instruct # evol_instruct # lima
 template: llama3
-cutoff_len: 1024
-max_samples: 1000
-overwrite_cache: true
+cutoff_len: 4096 # 2048 # 1024
+# max_samples: 1000
+# overwrite_cache: true
 preprocessing_num_workers: 16
 
 ### output
-output_dir: saves/llama3-8b/full/sft
-logging_steps: 10
-save_steps: 500
+output_dir: /mnt/default/finetuned-model/llama3.1-8b-full-sft-Infinity_Instruct-lr1e-5 # /mnt/default/finetuned-model/llama3.1-8b-full-sft-lima evol_instruct
+logging_steps: 1
+save_steps: 1000 # 20
+save_only_model: true # 只保存模型
 plot_loss: true
 overwrite_output_dir: true
 
 ### train
-per_device_train_batch_size: 1
-gradient_accumulation_steps: 2
-learning_rate: 1.0e-5
-num_train_epochs: 3.0
-lr_scheduler_type: cosine
+per_device_train_batch_size: 4 # 4 2
+gradient_accumulation_steps: 8 # 4 8
+learning_rate: 1.0e-5 # 8.0e-7
+num_train_epochs: 1.0 # 1.0
+lr_scheduler_type: cosine # warmup_stable_decay
+# lr_scheduler_kwargs: {"num_stable_steps": 1672, "num_decay_steps": 209}
 warmup_ratio: 0.1
 bf16: true
 ddp_timeout: 180000000
+report_to: wandb
+run_name: llama-factory-sft-full-Infinity_Instruct-lr1e-5 # optional llama-factory-sft-full-evol_instruct llama-factory-sft-full-lima
 
 ### eval
-val_size: 0.1
-per_device_eval_batch_size: 1
+val_size: 0.01
+per_device_eval_batch_size: 2
 eval_strategy: steps
-eval_steps: 500
+eval_steps: 1000
